@@ -1,15 +1,49 @@
 package web
 
-import "log"
+import (
+	"bytes"
+	"fmt"
+	"html/template"
+	"log"
+	"net/http"
+)
 
 type Application struct {
-	infoLog  *log.Logger
-	errorLog *log.Logger
+	infoLog       *log.Logger
+	errorLog      *log.Logger
+	templateCache map[string]*template.Template
 }
 
-func NewApplication(infoLog, errorLog *log.Logger) *Application {
-	return &Application{
-		infoLog:  infoLog,
-		errorLog: errorLog,
+func NewApplication(infoLog, errorLog *log.Logger) (*Application, error) {
+	tc, err := newTemplateCache()
+	if err != nil {
+		return nil, err
 	}
+
+	app := &Application{
+		infoLog:       infoLog,
+		errorLog:      errorLog,
+		templateCache: tc,
+	}
+
+	return app, nil
+}
+
+func (app *Application) render(w http.ResponseWriter, status int, page string) {
+	ts, ok := app.templateCache[page]
+	if !ok {
+		err := fmt.Errorf("the templates %s does not exist", page)
+		app.serverError(w, err)
+		return
+	}
+
+	buf := new(bytes.Buffer)
+	err := ts.ExecuteTemplate(buf, "base", nil)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	w.WriteHeader(status)
+	buf.WriteTo(w)
 }

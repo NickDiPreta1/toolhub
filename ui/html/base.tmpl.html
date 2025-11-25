@@ -1,0 +1,28 @@
+{{define "base"}}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{template "title" .}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body { font-family: sans-serif; margin: 0; padding: 0; background: #fafafa; }
+      header { background: #222; color: white; padding: 1rem; }
+      main { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+      nav a { color: white; text-decoration: none; margin-right: 1rem; }
+      nav a:hover { text-decoration: underline; }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>Go Tools Hub</h1>
+      {{template "nav" .}}
+    </header>
+
+    <main>
+      {{template "content" .}}
+    </main>
+  </body>
+</html>
+{{end}}

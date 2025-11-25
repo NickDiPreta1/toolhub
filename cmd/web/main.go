@@ -17,7 +17,10 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	app := web.NewApplication(infoLog, errorLog)
+	app, err := web.NewApplication(infoLog, errorLog)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
 	srv := http.Server{
 		Addr:     *addr,
