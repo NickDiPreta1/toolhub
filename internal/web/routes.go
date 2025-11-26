@@ -7,5 +7,6 @@ func (app *Application) Routes() http.Handler {
 
 	mux.HandleFunc("/ping", app.Ping)
 	mux.HandleFunc("/", app.home)
-	return mux
+
+	return app.PanicRecover(app.LogRequest(mux))
 }

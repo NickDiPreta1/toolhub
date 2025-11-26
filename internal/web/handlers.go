@@ -10,5 +10,6 @@ func (app *Application) Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
+	panic("boom")
 	app.render(w, http.StatusOK, "home.tmpl.html")
 }
