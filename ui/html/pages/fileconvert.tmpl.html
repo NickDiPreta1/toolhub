@@ -1,0 +1,24 @@
+{{define "title"}}File Converter{{end}}
+
+{{define "content"}}
+<h1>File Converter</h1>
+
+<p>Upload a .txt file and choose a conversion mode. This version only verifies upload; actual conversion comes next.</p>
+
+<form action="/tools/fileconvert" method="post" enctype="multipart/form-data" style="margin-top: 1rem;">
+    
+    <div style="margin-bottom: 1rem;">
+        <label for="file">Choose file:</label><br>
+        <input type="file" id="file" name="file" required>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+        <label for="mode">Conversion mode:</label><br>
+        <select id="mode" name="mode">
+            <option value="uppercase">Uppercase</option>
+        </select>
+    </div>
+
+    <button type="submit">Convert File</button>
+</form>
+{{end}}
