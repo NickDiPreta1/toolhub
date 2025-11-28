@@ -2,7 +2,10 @@ package web
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+
+	"github.com/NickDiPreta1/toolhub/internal/tools/fileconvert"
 )
 
 func (app *Application) Ping(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +41,7 @@ func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, header, err := r.FormFile("file")
+	file, _, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "file field is required", http.StatusBadRequest)
 		return
@@ -50,6 +53,18 @@ func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
 		mode = "uppercase"
 	}
 
+	converted, err := fileconvert.ToUpperText(file)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("Content-Disposition", `attachment; filename="converted.txt"`)
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "File received: %s (mode=%s)\n", header.Filename, mode)
+
+	_, err = io.Copy(w, converted)
+	if err != nil {
+		app.errorLog.Printf("error sending converted file: %v", err)
+		return
+	}
 }
