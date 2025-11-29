@@ -2,14 +2,16 @@
 
 {{define "content"}}
 <h1>File Converter</h1>
-
+{{if .Error}}
+    <p style="color: red; margin-top: 0.5rem;">{{.Error}}</p>
+{{end}}
 <p>Upload a .txt file and choose a conversion mode. This version only verifies upload; actual conversion comes next.</p>
 
 <form action="/tools/fileconvert" method="post" enctype="multipart/form-data" style="margin-top: 1rem;">
     
     <div style="margin-bottom: 1rem;">
         <label for="file">Choose file:</label><br>
-        <input type="file" id="file" name="file" required>
+        <input type="file" id="file" name="file" >
     </div>
 
     <div style="margin-bottom: 1rem;">

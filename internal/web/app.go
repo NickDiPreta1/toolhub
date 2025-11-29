@@ -29,7 +29,7 @@ func NewApplication(infoLog, errorLog *log.Logger) (*Application, error) {
 	return app, nil
 }
 
-func (app *Application) render(w http.ResponseWriter, status int, page string) {
+func (app *Application) render(w http.ResponseWriter, status int, page string, data any) {
 	ts, ok := app.templateCache[page]
 	if !ok {
 		err := fmt.Errorf("the templates %s does not exist", page)
@@ -38,7 +38,7 @@ func (app *Application) render(w http.ResponseWriter, status int, page string) {
 	}
 
 	buf := new(bytes.Buffer)
-	err := ts.ExecuteTemplate(buf, "base", nil)
+	err := ts.ExecuteTemplate(buf, "base", data)
 	if err != nil {
 		app.serverError(w, err)
 		return

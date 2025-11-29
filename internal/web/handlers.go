@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 
 	"github.com/NickDiPreta1/toolhub/internal/tools/fileconvert"
 )
@@ -13,7 +14,7 @@ func (app *Application) Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
-	app.render(w, http.StatusOK, "home.tmpl.html")
+	app.render(w, http.StatusOK, "home.tmpl.html", nil)
 }
 
 func (app *Application) fileConverterForm(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +23,12 @@ func (app *Application) fileConverterForm(w http.ResponseWriter, r *http.Request
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	app.render(w, http.StatusOK, "fileconvert.tmpl.html")
+	data := &FileConvertData{}
+	app.render(w, http.StatusOK, "fileconvert.tmpl.html", data)
+}
+
+type FileConvertData struct {
+	Error string
 }
 
 func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
@@ -37,16 +43,31 @@ func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
 
 	// this is resource management - tells how much can be stored in ram
 	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
-		http.Error(w, "unable to parse form (file too large or invalid)", http.StatusBadRequest)
+		data := &FileConvertData{
+			Error: "File too large or invalid upload. Maximum size is 2MB.",
+		}
+		app.render(w, http.StatusBadRequest, "fileconvert.tmpl.html", data)
 		return
 	}
 
-	file, _, err := r.FormFile("file")
+	file, header, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "file field is required", http.StatusBadRequest)
+		data := &FileConvertData{
+			Error: "Please choose a file to convert.",
+		}
+		app.render(w, http.StatusBadRequest, "fileconvert.tmpl.html", data)
 		return
 	}
 	defer file.Close()
+
+	ext := filepath.Ext(header.Filename)
+	if ext != ".txt" {
+		data := &FileConvertData{
+			Error: "Only .txt files are supported right now.",
+		}
+		app.render(w, http.StatusBadRequest, "fileconvert.tmpl.html", data)
+		return
+	}
 
 	mode := r.FormValue("mode")
 	if mode == "" {
@@ -56,6 +77,7 @@ func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
 	converted, err := fileconvert.ToUpperText(file)
 	if err != nil {
 		app.serverError(w, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
