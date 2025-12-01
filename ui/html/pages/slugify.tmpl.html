@@ -1,0 +1,21 @@
+{{define "title"}}Slugify Tool{{end}}
+
+{{define "content"}}
+<h1>Slugify</h1>
+
+{{if .Error}}
+  <p style="color: red;">{{.Error}}</p>
+{{end}}
+
+<form action="/tools/slugify" method="post" style="margin-top: 1rem;">
+  <label for="input">Text to slugify:</label><br>
+  <input type="text" id="input" name="input" value="{{.Input}}" style="width: 20rem;"><br><br>
+
+  <button type="submit">Generate Slug</button>
+</form>
+
+{{if .Output}}
+  <h2>Result</h2>
+  <pre>{{.Output}}</pre>
+{{end}}
+{{end}}

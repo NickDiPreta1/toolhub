@@ -17,8 +17,8 @@ func (app *Application) Routes() http.Handler {
 			w.Header().Set("Allow", "GET, POST")
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
-
 	})
+	mux.HandleFunc("/tools/slugify", app.slugify)
 
 	return app.PanicRecover(app.LogRequest(mux))
 }

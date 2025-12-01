@@ -5,8 +5,10 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/NickDiPreta1/toolhub/internal/tools/fileconvert"
+	"github.com/NickDiPreta1/toolhub/internal/tools/textutil"
 )
 
 func (app *Application) Ping(w http.ResponseWriter, r *http.Request) {
@@ -87,6 +89,41 @@ func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
 	_, err = io.Copy(w, converted)
 	if err != nil {
 		app.errorLog.Printf("error sending converted file: %v", err)
+		return
+	}
+}
+
+type SlugifyData struct {
+	Error  string
+	Input  string
+	Output string
+}
+
+func (app *Application) slugify(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		data := &SlugifyData{}
+		app.render(w, http.StatusOK, "slugify.tmpl.html", data)
+
+	case http.MethodPost:
+		input := r.FormValue("input")
+
+		if strings.TrimSpace(input) == "" {
+			data := &SlugifyData{
+				Error: "Please enter some text to slugify.",
+			}
+			app.render(w, http.StatusBadRequest, "slugify.tmpl.html", data)
+			return
+		}
+
+		slug := textutil.Slugify(input)
+		data := &SlugifyData{
+			Output: slug,
+		}
+		app.render(w, http.StatusOK, "slugify.tmpl.html", data)
+	default:
+		w.Header().Set("Allow", "GET, POST")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 }
