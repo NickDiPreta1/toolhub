@@ -5,6 +5,13 @@ import (
 	"path/filepath"
 )
 
+type templateData struct {
+	Error     string
+	Flash     string
+	PageTitle string
+	ToolData  any
+}
+
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 	pages, err := filepath.Glob("./ui/html/pages/*.tmpl.html")

@@ -26,7 +26,9 @@ type FileConvertData struct {
 func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		data := &FileConvertData{}
+		data := &templateData{
+			ToolData: FileConvertData{},
+		}
 		app.render(w, http.StatusOK, "fileconvert.tmpl.html", data)
 	case http.MethodPost:
 		const maxUploadSize = 2 * 1024 * 1024
@@ -34,8 +36,10 @@ func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
 
 		// this is resource management - tells how much can be stored in ram
 		if err := r.ParseMultipartForm(maxUploadSize); err != nil {
-			data := &FileConvertData{
-				Error: "File too large or invalid upload. Maximum size is 2MB.",
+			data := &templateData{
+				ToolData: &FileConvertData{
+					Error: "File too large or invalid upload. Maximum size is 2MB.",
+				},
 			}
 			app.render(w, http.StatusBadRequest, "fileconvert.tmpl.html", data)
 			return
@@ -43,8 +47,10 @@ func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
 
 		file, header, err := r.FormFile("file")
 		if err != nil {
-			data := &FileConvertData{
-				Error: "Please choose a file to convert.",
+			data := &templateData{
+				ToolData: &FileConvertData{
+					Error: "Please choose a file to convert.",
+				},
 			}
 			app.render(w, http.StatusBadRequest, "fileconvert.tmpl.html", data)
 			return
@@ -53,8 +59,10 @@ func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
 
 		ext := filepath.Ext(header.Filename)
 		if ext != ".txt" {
-			data := &FileConvertData{
-				Error: "Only .txt files are supported right now.",
+			data := &templateData{
+				ToolData: &FileConvertData{
+					Error: "Only .txt files are supported right now.",
+				},
 			}
 			app.render(w, http.StatusBadRequest, "fileconvert.tmpl.html", data)
 			return
@@ -95,23 +103,30 @@ type SlugifyData struct {
 func (app *Application) slugify(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		data := &SlugifyData{}
+		data := &templateData{
+			ToolData: &SlugifyData{},
+		}
 		app.render(w, http.StatusOK, "slugify.tmpl.html", data)
 
 	case http.MethodPost:
 		input := r.FormValue("input")
 
 		if strings.TrimSpace(input) == "" {
-			data := &SlugifyData{
-				Error: "Please enter some text to slugify.",
+			data := &templateData{
+				ToolData: &SlugifyData{
+					Error: "Please enter some text to slugify.",
+				},
 			}
 			app.render(w, http.StatusBadRequest, "slugify.tmpl.html", data)
 			return
 		}
 
 		slug := textutil.Slugify(input)
-		data := &SlugifyData{
-			Output: slug,
+		data := &templateData{
+			ToolData: &SlugifyData{
+				Input:  input,
+				Output: slug,
+			},
 		}
 		app.render(w, http.StatusOK, "slugify.tmpl.html", data)
 	default:
