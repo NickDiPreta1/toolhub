@@ -16,7 +16,8 @@ func (app *Application) Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
-	app.render(w, http.StatusOK, "home.tmpl.html", nil)
+	data := &templateData{}
+	app.render(w, http.StatusOK, "home.tmpl.html", data)
 }
 
 type FileConvertData struct {
@@ -27,7 +28,7 @@ func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		data := &templateData{
-			ToolData: FileConvertData{},
+			ToolData: &FileConvertData{},
 		}
 		app.render(w, http.StatusOK, "fileconvert.tmpl.html", data)
 	case http.MethodPost:
