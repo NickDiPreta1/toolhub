@@ -19,77 +19,70 @@ func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "home.tmpl.html", nil)
 }
 
-func (app *Application) fileConverterForm(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		w.Header().Set("Allow", http.MethodGet)
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	data := &FileConvertData{}
-	app.render(w, http.StatusOK, "fileconvert.tmpl.html", data)
-}
-
 type FileConvertData struct {
 	Error string
 }
 
 func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
+	switch r.Method {
+	case http.MethodGet:
+		data := &FileConvertData{}
+		app.render(w, http.StatusOK, "fileconvert.tmpl.html", data)
+	case http.MethodPost:
+		const maxUploadSize = 2 * 1024 * 1024
+		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+
+		// this is resource management - tells how much can be stored in ram
+		if err := r.ParseMultipartForm(maxUploadSize); err != nil {
+			data := &FileConvertData{
+				Error: "File too large or invalid upload. Maximum size is 2MB.",
+			}
+			app.render(w, http.StatusBadRequest, "fileconvert.tmpl.html", data)
+			return
+		}
+
+		file, header, err := r.FormFile("file")
+		if err != nil {
+			data := &FileConvertData{
+				Error: "Please choose a file to convert.",
+			}
+			app.render(w, http.StatusBadRequest, "fileconvert.tmpl.html", data)
+			return
+		}
+		defer file.Close()
+
+		ext := filepath.Ext(header.Filename)
+		if ext != ".txt" {
+			data := &FileConvertData{
+				Error: "Only .txt files are supported right now.",
+			}
+			app.render(w, http.StatusBadRequest, "fileconvert.tmpl.html", data)
+			return
+		}
+
+		mode := r.FormValue("mode")
+		if mode == "" {
+			mode = "uppercase"
+		}
+
+		converted, err := fileconvert.ToUpperText(file)
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Disposition", `attachment; filename="converted.txt"`)
+		w.WriteHeader(http.StatusOK)
+
+		_, err = io.Copy(w, converted)
+		if err != nil {
+			app.errorLog.Printf("error sending converted file: %v", err)
+			return
+		}
+	default:
+		w.Header().Set("Allow", "GET, POST")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	const maxUploadSize = 2 * 1024 * 1024
-	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
-
-	// this is resource management - tells how much can be stored in ram
-	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
-		data := &FileConvertData{
-			Error: "File too large or invalid upload. Maximum size is 2MB.",
-		}
-		app.render(w, http.StatusBadRequest, "fileconvert.tmpl.html", data)
-		return
-	}
-
-	file, header, err := r.FormFile("file")
-	if err != nil {
-		data := &FileConvertData{
-			Error: "Please choose a file to convert.",
-		}
-		app.render(w, http.StatusBadRequest, "fileconvert.tmpl.html", data)
-		return
-	}
-	defer file.Close()
-
-	ext := filepath.Ext(header.Filename)
-	if ext != ".txt" {
-		data := &FileConvertData{
-			Error: "Only .txt files are supported right now.",
-		}
-		app.render(w, http.StatusBadRequest, "fileconvert.tmpl.html", data)
-		return
-	}
-
-	mode := r.FormValue("mode")
-	if mode == "" {
-		mode = "uppercase"
-	}
-
-	converted, err := fileconvert.ToUpperText(file)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/plain")
-	w.Header().Set("Content-Disposition", `attachment; filename="converted.txt"`)
-	w.WriteHeader(http.StatusOK)
-
-	_, err = io.Copy(w, converted)
-	if err != nil {
-		app.errorLog.Printf("error sending converted file: %v", err)
-		return
 	}
 }
 
