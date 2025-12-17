@@ -1,0 +1,72 @@
+{{define "title"}}JSON Formatter{{end}}
+
+{{define "content"}}
+<h1>JSON Formatter</h1>
+
+<p>Format (pretty-print) or minify your JSON. Paste your JSON below and choose your formatting option.</p>
+
+{{if .ToolData.Error}}
+  <p style="color: red; background: #ffe6e6; padding: 0.75rem; border-radius: 4px; margin: 1rem 0;">
+    <strong>Error:</strong> {{.ToolData.Error}}
+  </p>
+{{end}}
+
+<form action="/tools/json" method="post" style="margin-top: 1.5rem;">
+  
+  <div style="margin-bottom: 1.5rem;">
+    <label for="input" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+      JSON Input:
+    </label>
+    <textarea 
+      id="input" 
+      name="input" 
+      rows="15" 
+      placeholder='{"name": "John", "age": 30, "city": "New York"}'
+      style="width: 100%; font-family: 'Courier New', Consolas, monospace; font-size: 14px; padding: 0.75rem; border: 1px solid #ccc; border-radius: 4px;"
+    >{{.ToolData.Input}}</textarea>
+  </div>
+
+  <div style="margin-bottom: 1.5rem;">
+    <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+      Formatting Mode:
+    </label>
+    <div style="display: flex; gap: 1.5rem;">
+      <label style="display: flex; align-items: center; cursor: pointer;">
+        <input 
+          type="radio" 
+          name="mode" 
+          value="pretty" 
+          {{if or (eq .ToolData.Mode "pretty") (eq .ToolData.Mode "")}}checked{{end}}
+          style="margin-right: 0.5rem;"
+        >
+        Pretty Print (Format)
+      </label>
+      <label style="display: flex; align-items: center; cursor: pointer;">
+        <input 
+          type="radio" 
+          name="mode" 
+          value="minify"
+          {{if eq .ToolData.Mode "minify"}}checked{{end}}
+          style="margin-right: 0.5rem;"
+        >
+        Minify (Compact)
+      </label>
+    </div>
+  </div>
+
+  <button 
+    type="submit"
+    style="padding: 0.75rem 2rem; background: #222; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;"
+  >
+    Format JSON
+  </button>
+</form>
+
+{{if .ToolData.Output}}
+  <section style="margin-top: 2rem;">
+    <h2>Result</h2>
+    <pre style="background: #f5f5f5; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; overflow-x: auto; font-family: 'Courier New', Consolas, monospace; font-size: 14px; line-height: 1.5;">{{.ToolData.Output}}</pre>
+  </section>
+{{end}}
+
+{{end}}

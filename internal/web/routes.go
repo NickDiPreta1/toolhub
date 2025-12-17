@@ -9,6 +9,7 @@ func (app *Application) Routes() http.Handler {
 	mux.HandleFunc("/", app.home)
 	mux.HandleFunc("/tools/fileconvert", app.fileConvert)
 	mux.HandleFunc("/tools/slugify", app.slugify)
+	mux.HandleFunc("/tools/json", app.jsonFormatter)
 
 	return app.PanicRecover(app.LogRequest(mux))
 }
