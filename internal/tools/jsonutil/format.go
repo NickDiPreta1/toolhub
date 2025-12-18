@@ -33,7 +33,9 @@ func Minify(input string) (string, error) {
 	}
 
 	var buf bytes.Buffer
-	json.Compact(&buf, []byte(input))
+	if err := json.Compact(&buf, []byte(input)); err != nil {
+		return "", fmt.Errorf("invalid JSON: %w", err)
+	}
 
 	return buf.String(), nil
 }
