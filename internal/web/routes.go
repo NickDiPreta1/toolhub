@@ -10,6 +10,7 @@ func (app *Application) Routes() http.Handler {
 	mux.HandleFunc("/tools/fileconvert", app.fileConvert)
 	mux.HandleFunc("/tools/slugify", app.slugify)
 	mux.HandleFunc("/tools/json", app.jsonFormatter)
+	mux.HandleFunc("/tools/base64", app.base64Tool)
 
 	return app.PanicRecover(app.LogRequest(mux))
 }

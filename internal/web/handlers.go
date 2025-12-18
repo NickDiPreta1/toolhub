@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/NickDiPreta1/toolhub/internal/tools/encodingutil"
 	"github.com/NickDiPreta1/toolhub/internal/tools/fileconvert"
 	"github.com/NickDiPreta1/toolhub/internal/tools/jsonutil"
 	"github.com/NickDiPreta1/toolhub/internal/tools/textutil"
@@ -221,4 +222,74 @@ func (app *Application) jsonFormatter(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+}
+
+type Base64Data struct {
+	Error  string
+	Input  string
+	Output string
+	Mode   string
+}
+
+func (app *Application) base64Tool(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		data := &templateData{
+			ToolData: &Base64Data{},
+		}
+		app.render(w, http.StatusOK, "base64.tmpl.html", data)
+	case http.MethodPost:
+		input := r.FormValue("input")
+		mode := r.FormValue("mode")
+		if mode == "" {
+			mode = "encode"
+		}
+
+		if strings.TrimSpace(input) == "" {
+			data := &templateData{
+				ToolData: &Base64Data{
+					Input: input,
+					Error: "Input cannot be empty",
+				},
+			}
+
+			app.render(w, http.StatusBadRequest, "base64.tmpl.html", data)
+		}
+
+		if mode == "decode" {
+			decoded, err := encodingutil.Decode(input)
+			if err != nil {
+				data := &templateData{
+					ToolData: &Base64Data{
+						Input: input,
+						Error: "Invalid base64 input",
+					},
+				}
+				app.render(w, http.StatusBadRequest, "base64.tmpl.html", data)
+			}
+
+			data := &templateData{
+				ToolData: &Base64Data{
+					Input:  input,
+					Output: decoded,
+				},
+			}
+			app.render(w, http.StatusOK, "base64.tmpl.hml", data)
+		}
+
+		encoded := encodingutil.Encode(input)
+		data := &templateData{
+			ToolData: &Base64Data{
+				Input:  input,
+				Output: encoded,
+			},
+		}
+		app.render(w, http.StatusOK, "base64.tmpl.html", data)
+
+	default:
+		w.Header().Set("Allow", http.MethodGet+", "+http.MethodPost)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 }
