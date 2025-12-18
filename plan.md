@@ -42,6 +42,8 @@ You've already completed:
 - Routing patterns
 - Template data contracts
 - Two working tools (slugify, file converter)
+- Basic unit tests for each tool (table-driven)
+- One handler test per tool route
 
 **Key Learning**: Basic HTTP patterns, template rendering, form handling
 
@@ -49,12 +51,16 @@ You've already completed:
 - `/tools/json` GET/POST
 - Internal `jsonutil` package
 - Pretty-print and minify modes
+- Table-driven tests for `jsonutil`
+- Handler test for `/tools/json`
 - **Key Learning**: JSON marshaling, error handling patterns, form state preservation
 
 ### Days 13-15 — Base64 Encoder/Decoder
 - `/tools/base64` GET/POST
 - Internal `encodingutil` package
 - Encode/decode modes
+- Table-driven tests for `encodingutil`
+- Handler test for `/tools/base64`
 - **Key Learning**: Binary data handling, encoding packages, io.Reader patterns
 
 ---
@@ -87,6 +93,11 @@ Build: **Concurrent File Processor**
 5. Run with `-race` detector
 
 **Key Learning**: How goroutines work, when concurrency helps, how to coordinate
+
+**Testing Thread** (starts here and continues daily):
+- Add unit tests for new helpers/util packages the day you create them
+- Add at least one handler test for any new tool route
+- Use `-race` during concurrency exercises
 
 ### Days 19-21 — Channels Fundamentals
 **Complexity: Medium** | **Priority: CRITICAL**
@@ -219,7 +230,7 @@ func stage1(in <-chan Data) <-chan Result1 {
 **Complexity: Medium** | **Priority: CRITICAL**
 
 **Day 31**: Table-Driven Tests
-- Refactor all existing tool tests to table-driven style
+- Refactor any remaining tests to table-driven style
 - Learn idiomatic test structure
 - Test naming conventions (`TestFunction_Scenario_ExpectedOutcome`)
 
