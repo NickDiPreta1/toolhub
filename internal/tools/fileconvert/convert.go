@@ -5,6 +5,7 @@ import (
 	"io"
 )
 
+// ToUpperText reads all input and returns a reader for the uppercased content.
 func ToUpperText(r io.Reader) (io.Reader, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {

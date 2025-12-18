@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 )
 
+// templateData is the shared view model for templates.
 type templateData struct {
 	Error     string
 	Flash     string
@@ -12,6 +13,7 @@ type templateData struct {
 	ToolData  any
 }
 
+// newTemplateCache parses page, base, and partial templates into a lookup map.
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 	pages, err := filepath.Glob("./ui/html/pages/*.tmpl.html")

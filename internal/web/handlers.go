@@ -13,10 +13,12 @@ import (
 	"github.com/NickDiPreta1/toolhub/internal/tools/textutil"
 )
 
+// Ping provides a simple health check endpoint.
 func (app *Application) Ping(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "pong")
 }
 
+// home renders the landing page.
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	data := &templateData{}
 	app.render(w, http.StatusOK, "home.tmpl.html", data)
@@ -26,6 +28,7 @@ type FileConvertData struct {
 	Error string
 }
 
+// fileConvert handles file upload, conversion, and download.
 func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -37,7 +40,7 @@ func (app *Application) fileConvert(w http.ResponseWriter, r *http.Request) {
 		const maxUploadSize = 2 * 1024 * 1024
 		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 
-		// this is resource management - tells how much can be stored in ram
+		// Limit total form data to keep memory usage predictable.
 		if err := r.ParseMultipartForm(maxUploadSize); err != nil {
 			data := &templateData{
 				ToolData: &FileConvertData{
@@ -103,6 +106,7 @@ type SlugifyData struct {
 	Output string
 }
 
+// slugify renders the slugify tool and processes user input.
 func (app *Application) slugify(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -146,6 +150,7 @@ type JSONFormatterData struct {
 	Mode   string
 }
 
+// jsonFormatter formats or minifies JSON submitted by the user.
 func (app *Application) jsonFormatter(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -231,6 +236,7 @@ type Base64Data struct {
 	Mode   string
 }
 
+// base64Tool encodes or decodes base64 input.
 func (app *Application) base64Tool(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -238,6 +244,7 @@ func (app *Application) base64Tool(w http.ResponseWriter, r *http.Request) {
 			ToolData: &Base64Data{},
 		}
 		app.render(w, http.StatusOK, "base64.tmpl.html", data)
+		return
 	case http.MethodPost:
 		input := r.FormValue("input")
 		mode := r.FormValue("mode")
@@ -254,6 +261,7 @@ func (app *Application) base64Tool(w http.ResponseWriter, r *http.Request) {
 			}
 
 			app.render(w, http.StatusBadRequest, "base64.tmpl.html", data)
+			return
 		}
 
 		if mode == "decode" {
@@ -262,10 +270,12 @@ func (app *Application) base64Tool(w http.ResponseWriter, r *http.Request) {
 				data := &templateData{
 					ToolData: &Base64Data{
 						Input: input,
+						Mode:  "decode",
 						Error: "Invalid base64 input",
 					},
 				}
 				app.render(w, http.StatusBadRequest, "base64.tmpl.html", data)
+				return
 			}
 
 			data := &templateData{
@@ -274,7 +284,8 @@ func (app *Application) base64Tool(w http.ResponseWriter, r *http.Request) {
 					Output: decoded,
 				},
 			}
-			app.render(w, http.StatusOK, "base64.tmpl.hml", data)
+			app.render(w, http.StatusOK, "base64.tmpl.html", data)
+			return
 		}
 
 		encoded := encodingutil.Encode(input)
@@ -285,6 +296,7 @@ func (app *Application) base64Tool(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 		app.render(w, http.StatusOK, "base64.tmpl.html", data)
+		return
 
 	default:
 		w.Header().Set("Allow", http.MethodGet+", "+http.MethodPost)

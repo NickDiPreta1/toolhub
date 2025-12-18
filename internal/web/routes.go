@@ -2,6 +2,7 @@ package web
 
 import "net/http"
 
+// Routes registers handlers and wraps them with middleware.
 func (app *Application) Routes() http.Handler {
 	mux := http.NewServeMux()
 
