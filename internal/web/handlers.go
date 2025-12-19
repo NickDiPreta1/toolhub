@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/NickDiPreta1/toolhub/internal/tools/encodingutil"
 	"github.com/NickDiPreta1/toolhub/internal/tools/fileconvert"
@@ -302,6 +303,32 @@ func (app *Application) base64Tool(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Allow", http.MethodGet+", "+http.MethodPost)
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
+	}
+
+}
+
+type FileResult struct {
+	Filename string
+	Content  string
+	Duration time.Duration
+}
+
+type ConcurrentUpperData struct {
+	Results []FileResult
+	Error   string
+}
+
+func (app *Application) concurrentUpper(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		data := &templateData{
+			ToolData: &ConcurrentUpperData{},
+		}
+		app.render(w, http.StatusOK, "concurrent.tmpl.html", data)
+		return
+	default:
+		w.Header().Set("Allow", "GET, POST")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 
 }
