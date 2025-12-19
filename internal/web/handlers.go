@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -326,9 +327,62 @@ func (app *Application) concurrentUpper(w http.ResponseWriter, r *http.Request) 
 		}
 		app.render(w, http.StatusOK, "concurrent.tmpl.html", data)
 		return
+	case http.MethodPost:
+		const maxUploadSize = 10 * 1024 * 1024
+		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+
+		if err := r.ParseMultipartForm(maxUploadSize); err != nil {
+			data := &templateData{
+				ToolData: &ConcurrentUpperData{
+					Error: "File too large or invalid upload.",
+				},
+			}
+			app.render(w, http.StatusBadRequest, "concurrent.tmpl.html", data)
+			return
+		}
+
+		files := r.MultipartForm.File["files"]
+		if len(files) == 0 {
+			data := &templateData{
+				ToolData: &ConcurrentUpperData{
+					Error: "Please upload at least one file.",
+				},
+			}
+			app.render(w, http.StatusBadRequest, "concurrent.tmpl.html", data)
+		}
+
+		var results []FileResult
+		for _, fileHeader := range files {
+			start := time.Now()
+			file, err := fileHeader.Open()
+			if err != nil {
+				continue
+			}
+			data, err := io.ReadAll(file)
+			defer file.Close()
+			upper := bytes.ToUpper(data)
+			duration := time.Since(start)
+
+			results = append(results, FileResult{
+				Filename: fileHeader.Filename,
+				Content:  string(upper),
+				Duration: duration,
+			})
+		}
+
+		data := &templateData{
+			ToolData: &ConcurrentUpperData{
+				Results: results,
+			},
+		}
+
+		app.render(w, http.StatusOK, "concurrent.tmpl.html", data)
+		return
+
 	default:
 		w.Header().Set("Allow", "GET, POST")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
 	}
 
 }
