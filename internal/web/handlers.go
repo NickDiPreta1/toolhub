@@ -319,6 +319,7 @@ type ConcurrentUpperData struct {
 	Error   string
 }
 
+// concurrentUpper will concurrently process files
 func (app *Application) concurrentUpper(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -351,6 +352,8 @@ func (app *Application) concurrentUpper(w http.ResponseWriter, r *http.Request) 
 			app.render(w, http.StatusBadRequest, "concurrent.tmpl.html", data)
 		}
 
+		// var wg sync.WaitGroup
+		// var mu sync.Mutex
 		var results []FileResult
 		for _, fileHeader := range files {
 			start := time.Now()
