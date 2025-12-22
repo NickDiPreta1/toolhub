@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/NickDiPreta1/toolhub/internal/tools/encodingutil"
@@ -350,29 +352,55 @@ func (app *Application) concurrentUpper(w http.ResponseWriter, r *http.Request) 
 				},
 			}
 			app.render(w, http.StatusBadRequest, "concurrent.tmpl.html", data)
+			return
 		}
 
-		// var wg sync.WaitGroup
-		// var mu sync.Mutex
+		var wg sync.WaitGroup
+		var mu sync.Mutex
 		var results []FileResult
 		for _, fileHeader := range files {
-			start := time.Now()
-			file, err := fileHeader.Open()
-			if err != nil {
-				continue
-			}
-			data, err := io.ReadAll(file)
-			defer file.Close()
-			upper := bytes.ToUpper(data)
-			duration := time.Since(start)
+			wg.Add(1)
+			go func(fh *multipart.FileHeader) {
+				defer wg.Done()
+				start := time.Now()
+				file, err := fh.Open()
+				if err != nil {
+					app.errorLog.Printf("Failed to open %s: %v", fh.Filename, err)
+					return
+				}
+				defer file.Close()
 
-			results = append(results, FileResult{
-				Filename: fileHeader.Filename,
-				Content:  string(upper),
-				Duration: duration,
-			})
+				data, err := io.ReadAll(file)
+				if err != nil {
+					app.errorLog.Printf("Failed to read %s: %v", fh.Filename, err)
+					return
+				}
+
+				upper := bytes.ToUpper(data)
+				duration := time.Since(start)
+
+				mu.Lock()
+				results = append(results, FileResult{
+					Filename: fh.Filename,
+					Content:  string(upper),
+					Duration: duration,
+				})
+				mu.Unlock()
+			}(fileHeader)
 		}
 
+		wg.Wait()
+
+		if len(results) == 0 && len(files) > 0 {
+			// All files failed to process
+			data := &templateData{
+				ToolData: &ConcurrentUpperData{
+					Error: "Failed to process any files",
+				},
+			}
+			app.render(w, http.StatusInternalServerError, "concurrent.tmpl.html", data)
+			return
+		}
 		data := &templateData{
 			ToolData: &ConcurrentUpperData{
 				Results: results,
