@@ -38,7 +38,7 @@ func createMultiPartRequest(t *testing.T, files map[string]string) *http.Request
 	return req
 }
 
-func TestConcurrentUpper(t *testing.T) {
+func TestConcurrentUpper_Success(t *testing.T) {
 	// Save current working directory
 	originalWd, err := os.Getwd()
 	if err != nil {
@@ -88,3 +88,64 @@ func TestConcurrentUpper(t *testing.T) {
 		t.Errorf("unexpected error in response")
 	}
 }
+
+func TestConcurrentUpper_NoFiles(t *testing.T) {
+	// Save current working directory
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to project root (two levels up from internal/web)
+	if err := os.Chdir("../.."); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(originalWd) // Restore working directory after test
+
+	app, err := NewApplication(
+		log.New(os.Stdout, "TEST INFO: ", 0), // See logs!
+		log.New(os.Stdout, "TEST ERROR: ", 0),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	files := map[string]string{}
+
+	req := createMultiPartRequest(t, files)
+	recorder := httptest.NewRecorder()
+
+	app.concurrentUpper(recorder, req)
+
+	responseBody := recorder.Body.String()
+
+	if recorder.Code != 400 {
+		t.Errorf("expected status of 400, got %d", recorder.Code)
+	}
+
+	if !strings.Contains(responseBody, "Error: ") {
+		t.Errorf("expected error in response")
+	}
+}
+
+// func TestConcurrentUpper_FileTooLarge(t *testing.T) {
+// 	// Save current working directory
+// 	originalWd, err := os.Getwd()
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+
+// 	// Change to project root (two levels up from internal/web)
+// 	if err := os.Chdir("../.."); err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	defer os.Chdir(originalWd) // Restore working directory after test
+
+// 	app, err := NewApplication(
+// 		log.New(os.Stdout, "TEST INFO: ", 0), // See logs!
+// 		log.New(os.Stdout, "TEST ERROR: ", 0),
+// 	)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// }

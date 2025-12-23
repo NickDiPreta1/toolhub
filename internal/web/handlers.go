@@ -348,7 +348,7 @@ func (app *Application) concurrentUpper(w http.ResponseWriter, r *http.Request) 
 		if len(files) == 0 {
 			data := &templateData{
 				ToolData: &ConcurrentUpperData{
-					Error: "Please upload at least one file.",
+					Error: "Error: please upload at least one file.",
 				},
 			}
 			app.render(w, http.StatusBadRequest, "concurrent.tmpl.html", data)
