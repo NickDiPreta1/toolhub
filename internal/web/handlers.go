@@ -355,6 +355,9 @@ func (app *Application) concurrentUpper(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
+		// Process files concurrently using goroutines for improved performance.
+		// WaitGroup tracks all running goroutines to ensure we wait for completion.
+		// Mutex protects the shared results slice from concurrent write races.
 		var wg sync.WaitGroup
 		var mu sync.Mutex
 		var results []FileResult
@@ -379,6 +382,8 @@ func (app *Application) concurrentUpper(w http.ResponseWriter, r *http.Request) 
 				upper := bytes.ToUpper(data)
 				duration := time.Since(start)
 
+				// Lock protects against race conditions when multiple goroutines
+				// append to the results slice simultaneously.
 				mu.Lock()
 				results = append(results, FileResult{
 					Filename: fh.Filename,
@@ -389,10 +394,12 @@ func (app *Application) concurrentUpper(w http.ResponseWriter, r *http.Request) 
 			}(fileHeader)
 		}
 
+		// Wait for all goroutines to complete before proceeding
 		wg.Wait()
 
+		// Check if all file processing failed. If files were uploaded but
+		// no results were produced, all goroutines encountered errors.
 		if len(results) == 0 && len(files) > 0 {
-			// All files failed to process
 			data := &templateData{
 				ToolData: &ConcurrentUpperData{
 					Error: "Failed to process any files",

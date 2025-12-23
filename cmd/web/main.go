@@ -1,3 +1,6 @@
+// Package main is the entry point for the toolhub web application.
+// It starts an HTTP server that provides various web-based utilities
+// including text processing, encoding, and file conversion tools.
 package main
 
 import (
