@@ -128,24 +128,45 @@ func TestConcurrentUpper_NoFiles(t *testing.T) {
 	}
 }
 
-// func TestConcurrentUpper_FileTooLarge(t *testing.T) {
-// 	// Save current working directory
-// 	originalWd, err := os.Getwd()
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
+func TestConcurrentUpper_FileTooLarge(t *testing.T) {
+	// Save current working directory
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	// Change to project root (two levels up from internal/web)
-// 	if err := os.Chdir("../.."); err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	defer os.Chdir(originalWd) // Restore working directory after test
+	// Change to project root (two levels up from internal/web)
+	if err := os.Chdir("../.."); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(originalWd) // Restore working directory after test
 
-// 	app, err := NewApplication(
-// 		log.New(os.Stdout, "TEST INFO: ", 0), // See logs!
-// 		log.New(os.Stdout, "TEST ERROR: ", 0),
-// 	)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// }
+	app, err := NewApplication(
+		log.New(os.Stdout, "TEST INFO: ", 0), // See logs!
+		log.New(os.Stdout, "TEST ERROR: ", 0),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a file that exceeds the 10MB limit
+	largeContent := strings.Repeat("a", 11*1024*1024) // 11MB
+	files := map[string]string{
+		"large.txt": largeContent,
+	}
+
+	req := createMultiPartRequest(t, files)
+	recorder := httptest.NewRecorder()
+
+	app.concurrentUpper(recorder, req)
+
+	responseBody := recorder.Body.String()
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", recorder.Code)
+	}
+
+	if !strings.Contains(responseBody, "File too large") {
+		t.Errorf("expected 'File too large' error in response, got: %s", responseBody)
+	}
+}
