@@ -424,3 +424,39 @@ func (app *Application) concurrentUpper(w http.ResponseWriter, r *http.Request) 
 	}
 
 }
+
+type HashResult struct {
+	Filename string
+	Hash     string
+	Error    string
+}
+
+type ConcurrentHashData struct {
+	Results []HashResult
+	Error   string
+}
+
+func (app *Application) concurrentHash(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		data := &templateData{
+			ToolData: &ConcurrentHashData{},
+		}
+		app.render(w, http.StatusOK, "hash.tmpl.html", data)
+		return
+	case http.MethodPost:
+		const maxUploadSize = 10 * 1024 * 1024
+		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+
+		if err := r.ParseMultipartForm(maxUploadSize); err != nil {
+			data := &templateData{
+				ToolData: &ConcurrentHashData{
+					Error: "File too large or invalid upload.",
+				},
+			}
+			app.render(w, http.StatusBadRequest, "hash.tmpl.html", data)
+			return
+		}
+	}
+
+}

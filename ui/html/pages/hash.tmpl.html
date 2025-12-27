@@ -1,0 +1,86 @@
+{{define "title"}}Concurrent Hash Calculator{{end}}
+
+{{define "content"}}
+<h1>Concurrent Hash Calculator</h1>
+
+<p>Upload multiple files and watch them get hashed concurrently! Each file is processed in its own goroutine using channels for communication.</p>
+
+{{if .ToolData.Error}}
+  <p style="color: red; background: #ffe6e6; padding: 0.75rem; border-radius: 4px; margin: 1rem 0;">
+    <strong>Error:</strong> {{.ToolData.Error}}
+  </p>
+{{end}}
+
+<form action="/tools/hash" method="post" enctype="multipart/form-data" style="margin-top: 1.5rem;">
+  
+  <div style="margin-bottom: 1.5rem;">
+    <label for="files" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+      Select Files (multiple):
+    </label>
+    <input 
+      type="file" 
+      id="files" 
+      name="files" 
+      multiple
+      style="padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;"
+    >
+    <p style="margin-top: 0.5rem; font-size: 14px; color: #666;">
+      Select 2-5 files to see concurrent hashing in action!
+    </p>
+  </div>
+
+  <button 
+    type="submit"
+    style="padding: 0.75rem 2rem; background: #222; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;"
+  >
+    Hash Files Concurrently
+  </button>
+</form>
+
+{{if .ToolData.Results}}
+  <section style="margin-top: 2rem;">
+    <h2>Results</h2>
+    
+    <div style="background: #e8f5e9; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
+      <p style="margin: 0; font-weight: bold;">
+        ✅ Hashed {{len .ToolData.Results}} files concurrently!
+      </p>
+    </div>
+
+    {{range .ToolData.Results}}
+      <div style="background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 1rem; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <h3 style="margin: 0; font-size: 16px;">📄 {{.Filename}}</h3>
+          {{if .Error}}
+            <span style="background: #f44336; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 12px;">
+              ❌ Error
+            </span>
+          {{else}}
+            <span style="background: #4CAF50; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 12px;">
+              ✓ SHA-256
+            </span>
+          {{end}}
+        </div>
+        
+        {{if .Error}}
+          <p style="color: #f44336; margin: 0; font-size: 14px;">{{.Error}}</p>
+        {{else}}
+          <pre style="background: white; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; overflow-x: auto; font-family: 'Courier New', Consolas, monospace; font-size: 12px; line-height: 1.5; word-break: break-all;">{{.Hash}}</pre>
+        {{end}}
+      </div>
+    {{end}}
+  </section>
+{{end}}
+
+<section style="margin-top: 2rem; padding: 1rem; background: #fff3cd; border-radius: 4px;">
+  <h3 style="margin-top: 0;">📚 Learning: Channels</h3>
+  <ul style="margin-bottom: 0;">
+    <li>Each file is hashed in a separate <strong>goroutine</strong></li>
+    <li>Files are hashed <strong>concurrently</strong> (at the same time!)</li>
+    <li><strong>Channels</strong> communicate hashes from workers back to main</li>
+    <li>This is different from the concurrent upper tool (which used WaitGroup + Mutex)</li>
+    <li>Channels enforce safe communication between goroutines</li>
+  </ul>
+</section>
+
+{{end}}

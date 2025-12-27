@@ -13,6 +13,7 @@ func (app *Application) Routes() http.Handler {
 	mux.HandleFunc("/tools/json", app.jsonFormatter)
 	mux.HandleFunc("/tools/base64", app.base64Tool)
 	mux.HandleFunc("/tools/concurrent-upper", app.concurrentUpper)
+	mux.HandleFunc("/tools/concurrent-hash", app.concurrentHash)
 
 	return app.PanicRecover(app.LogRequest(mux))
 }
