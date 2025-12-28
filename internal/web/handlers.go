@@ -13,6 +13,7 @@ import (
 
 	"github.com/NickDiPreta1/toolhub/internal/tools/encodingutil"
 	"github.com/NickDiPreta1/toolhub/internal/tools/fileconvert"
+	"github.com/NickDiPreta1/toolhub/internal/tools/hashutil"
 	"github.com/NickDiPreta1/toolhub/internal/tools/jsonutil"
 	"github.com/NickDiPreta1/toolhub/internal/tools/textutil"
 )
@@ -465,9 +466,64 @@ func (app *Application) concurrentHash(w http.ResponseWriter, r *http.Request) {
 					Error: "Error: please upload at least one file",
 				},
 			}
-			app.render(w, http.StatusBadRequest, "concurrent.tmpl.html", data)
+			app.render(w, http.StatusBadRequest, "hash.tmpl.html", data)
 			return
 		}
+
+		resChan := make(chan HashResult)
+
+		for _, fileHeader := range files {
+			go func() {
+				file, err := fileHeader.Open()
+				if err != nil {
+					resChan <- HashResult{
+						Filename: fileHeader.Filename,
+						Error:    "Error opening file.",
+					}
+					return
+				}
+				defer file.Close()
+
+				data, err := io.ReadAll(file)
+				if err != nil {
+					resChan <- HashResult{
+						Filename: fileHeader.Filename,
+						Error:    "Error reading file.",
+					}
+					return
+				}
+				hashedFile, err := hashutil.Hash(data)
+				if err != nil {
+					resChan <- HashResult{
+						Filename: fileHeader.Filename,
+						Error:    fmt.Sprintf("Error: error hashing %s", fileHeader.Filename),
+					}
+					return
+				}
+				resChan <- HashResult{
+					Filename: fileHeader.Filename,
+					Hash:     hashedFile,
+				}
+			}()
+		}
+
+		var successes, failures []HashResult
+		for i := 0; i < len(files); i++ {
+			r := <-resChan
+			if r.Error != "" {
+				failures = append(failures, r)
+			} else {
+				successes = append(successes, r)
+			}
+		}
+
+		data := &templateData{
+			ToolData: &ConcurrentHashData{
+				Results: successes,
+			},
+		}
+
+		app.render(w, http.StatusOK, "hash.tmpl.html", data)
 
 	}
 
