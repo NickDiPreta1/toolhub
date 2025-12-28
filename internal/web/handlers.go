@@ -457,6 +457,16 @@ func (app *Application) concurrentHash(w http.ResponseWriter, r *http.Request) {
 			app.render(w, http.StatusBadRequest, "hash.tmpl.html", data)
 			return
 		}
+
+		files := r.MultipartForm.File["files"]
+		if len(files) == 0 {
+			data := &templateData{
+				ToolData: &ConcurrentHashData{
+					Error: "Error: please upload at least one file",
+				},
+			}
+			app.render(w, http.StatusBadRequest, "concurrent.tmpl.html", data)
+		}
 	}
 
 }
