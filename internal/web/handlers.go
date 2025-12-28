@@ -466,7 +466,9 @@ func (app *Application) concurrentHash(w http.ResponseWriter, r *http.Request) {
 				},
 			}
 			app.render(w, http.StatusBadRequest, "concurrent.tmpl.html", data)
+			return
 		}
+
 	}
 
 }
