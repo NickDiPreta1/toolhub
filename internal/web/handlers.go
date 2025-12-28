@@ -525,6 +525,11 @@ func (app *Application) concurrentHash(w http.ResponseWriter, r *http.Request) {
 
 		app.render(w, http.StatusOK, "hash.tmpl.html", data)
 
+	default:
+		w.Header().Set("Allow", "GET, POST")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+
 	}
 
 }
