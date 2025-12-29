@@ -470,51 +470,28 @@ func (app *Application) concurrentHash(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		resChan := make(chan HashResult)
+		resChan := make(chan HashResult, len(files))
 
 		for _, fileHeader := range files {
-			go func() {
-				file, err := fileHeader.Open()
-				if err != nil {
-					resChan <- HashResult{
-						Filename: fileHeader.Filename,
-						Error:    "Error opening file.",
-					}
-					return
-				}
-				defer file.Close()
-
-				data, err := io.ReadAll(file)
-				if err != nil {
-					resChan <- HashResult{
-						Filename: fileHeader.Filename,
-						Error:    "Error reading file.",
-					}
-					return
-				}
-				hashedFile, err := hashutil.Hash(data)
-				if err != nil {
-					resChan <- HashResult{
-						Filename: fileHeader.Filename,
-						Error:    fmt.Sprintf("Error: error hashing %s", fileHeader.Filename),
-					}
-					return
-				}
-				resChan <- HashResult{
-					Filename: fileHeader.Filename,
-					Hash:     hashedFile,
-				}
-			}()
+			go hashFile(fileHeader, resChan)
 		}
 
+		timeout := time.After(10 * time.Second)
 		var successes, failures []HashResult
 		for i := 0; i < len(files); i++ {
-			r := <-resChan
-			if r.Error != "" {
-				failures = append(failures, r)
-			} else {
-				successes = append(successes, r)
+			select {
+			case r := <-resChan:
+				if r.Error != "" {
+					failures = append(failures, r)
+				} else {
+					successes = append(successes, r)
+				}
+			case <-timeout:
+				failures = append(failures, HashResult{
+					Error: "Hashing took too long.",
+				})
 			}
+
 		}
 
 		data := &templateData{
@@ -532,4 +509,37 @@ func (app *Application) concurrentHash(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+}
+
+func hashFile(fh *multipart.FileHeader, results chan<- HashResult) {
+	file, err := fh.Open()
+	if err != nil {
+		results <- HashResult{
+			Filename: fh.Filename,
+			Error:    "Error opening file.",
+		}
+		return
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		results <- HashResult{
+			Filename: fh.Filename,
+			Error:    "Error reading file.",
+		}
+		return
+	}
+	hashedFile, err := hashutil.Hash(data)
+	if err != nil {
+		results <- HashResult{
+			Filename: fh.Filename,
+			Error:    fmt.Sprintf("Error: error hashing %s", fh.Filename),
+		}
+		return
+	}
+	results <- HashResult{
+		Filename: fh.Filename,
+		Hash:     hashedFile,
+	}
 }

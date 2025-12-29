@@ -125,41 +125,129 @@ Build: **Concurrent Hash Calculator**
 
 **Key Learning**: Channels as communication mechanism, CSP model
 
-### Days 22-24 — Worker Pool Pattern
+### Days 22-24 — Worker Pool Pattern (Enhanced)
 **Complexity: Medium-High** | **Priority: CRITICAL**
 
-Build: **Concurrent Image Processor**
-- Upload 10+ images
-- Process with a pool of 3 workers
-- Workers pull from job queue
-- Progress tracking via channel
+Build: **Concurrent Image Processor with Worker Pool**
 
-**Core Concepts**:
-- Bounded concurrency (semaphore pattern)
-- Job queue with buffered channel
-- Worker goroutines
-- Result collection patterns
-- Graceful shutdown
+Upload multiple images, process them through a fixed pool of workers, and track progress. This teaches bounded concurrency — critical for production systems where you can't spawn unlimited goroutines.
 
-**Pattern Template**:
-```go
-type Job struct {
-    ID   int
-    Data []byte
-}
+#### Core Requirements
 
-type Result struct {
-    JobID int
-    Output []byte
-    Error error
-}
+1. **Fixed worker count**: 3 workers process all jobs (not one goroutine per file)
+2. **Job queue**: Buffered channel that workers pull from
+3. **Result collection**: Workers send results back via channel
+4. **Graceful shutdown**: Close channels properly, workers exit cleanly
+5. **Progress tracking**: Know how many jobs completed vs pending
 
-// jobs channel feeds workers
-// results channel collects outputs
-// done channel signals completion
+#### Concurrency Patterns You'll Practice
+
+| Pattern | How You'll Use It |
+|---------|-------------------|
+| Worker pool | Fixed number of goroutines pulling from shared job queue |
+| Channel closing | Producer closes job channel when done sending; workers detect this |
+| Range over channel | Workers use `for job := range jobs` to receive until closed |
+| WaitGroup | Track when all workers have finished |
+| Select with done channel | Coordinate shutdown across goroutines |
+| Channel direction | `jobs <-chan Job` for workers, `results chan<- Result` for sending |
+| Buffered vs unbuffered | Job queue buffered, done signal unbuffered |
+
+#### Architecture
+
+```
+                    ┌──────────┐
+                    │ Producer │
+                    └────┬─────┘
+                         │ sends jobs
+                         ▼
+               ┌─────────────────────┐
+               │   jobs channel      │ (buffered, closed when done)
+               └─────────────────────┘
+                    │    │    │
+           ┌────────┘    │    └────────┐
+           ▼             ▼             ▼
+      ┌────────┐    ┌────────┐    ┌────────┐
+      │Worker 1│    │Worker 2│    │Worker 3│
+      └───┬────┘    └───┬────┘    └───┬────┘
+          │             │             │
+          └─────────────┼─────────────┘
+                        ▼
+               ┌─────────────────────┐
+               │  results channel    │ (buffered)
+               └─────────────────────┘
+                        │
+                        ▼
+                 ┌────────────┐
+                 │  Collector │
+                 └────────────┘
 ```
 
-**Key Learning**: Production concurrency patterns, resource limiting
+#### Data Structures
+
+```go
+type ImageJob struct {
+    ID       int
+    Filename string
+    Data     []byte
+}
+
+type ImageResult struct {
+    JobID    int
+    Filename string
+    Output   []byte    // processed image bytes
+    Duration time.Duration
+    Error    string
+}
+```
+
+#### Implementation Steps
+
+**Step 1**: Create the worker function
+- Signature: `func worker(id int, jobs <-chan ImageJob, results chan<- ImageResult, wg *sync.WaitGroup)`
+- Use `for job := range jobs` — exits when channel closes
+- Call `defer wg.Done()` at the start
+- Process image (resize, convert to grayscale, etc.)
+- Send result to results channel
+
+**Step 2**: Create the producer (in handler)
+- Create buffered jobs channel: `make(chan ImageJob, len(files))`
+- Create buffered results channel: `make(chan ImageResult, len(files))`
+- Spawn exactly 3 workers before sending any jobs
+- Send all jobs to the jobs channel
+- Close the jobs channel — signals workers no more jobs coming
+
+**Step 3**: Collect results
+- Use `for i := 0; i < len(files); i++` to collect
+- Add select with timeout for safety
+- Track successes vs failures
+
+**Step 4**: Add graceful shutdown with context
+- Accept `context.Context` in workers
+- Use `select` in worker to check both job channel and `ctx.Done()`
+- Cancel context on timeout — all workers exit promptly
+
+#### Stretch Goals
+
+- **Progress reporting**: Send progress updates on a separate channel
+- **Dynamic worker count**: Accept worker count as form parameter
+- **Retry failed jobs**: Re-queue failed jobs up to 3 times
+- **Metrics**: Track jobs/second, average processing time
+
+#### What the Image Processing Should Do
+
+Keep it simple — focus on concurrency, not image processing:
+- Convert image to grayscale using standard library `image` package
+- Or just hash the image bytes (reuse your hashutil) if you want to skip image processing
+
+#### Testing Requirements
+
+- Test with more files than workers (10 files, 3 workers)
+- Test with fewer files than workers (2 files, 3 workers)
+- Test timeout behavior
+- Test with `-race` flag
+- Verify all workers exit (no goroutine leaks)
+
+**Key Learning**: Production concurrency patterns, bounded resource usage, graceful shutdown
 
 ### Days 25-27 — Context Package
 **Complexity: Medium** | **Priority: CRITICAL**
