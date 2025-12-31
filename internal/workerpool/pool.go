@@ -1,6 +1,7 @@
 package workerpool
 
 import (
+	"context"
 	"sync"
 )
 
@@ -23,37 +24,50 @@ type Pool struct {
 	wg          sync.WaitGroup
 }
 
-func NewPool(wc int) *Pool {
+func NewPool(wc int, buffer int) *Pool {
 	return &Pool{
 		workerCount: wc,
-		jobs:        make(chan Job, wc),
-		results:     make(chan Result, wc),
+		jobs:        make(chan Job, buffer),
+		results:     make(chan Result, buffer),
 	}
 }
 
-func (p *Pool) worker() {
+func (p *Pool) worker(ctx context.Context) {
 	defer p.wg.Done()
-	for job := range p.jobs {
-		result, err := job.Func(job.Content)
-		if err != nil {
-			p.results <- Result{
-				JobID: job.ID,
-				Error: err,
+	for {
+		select {
+		case job, ok := <-p.jobs:
+			if !ok {
+				return
 			}
-			continue
+			result, err := job.Func(job.Content)
+			if err != nil {
+				p.results <- Result{
+					JobID: job.ID,
+					Error: err,
+				}
+				continue
+			}
+			p.results <- Result{
+				JobID:   job.ID,
+				Content: result,
+			}
+
+		case <-ctx.Done():
+			return
 		}
-		p.results <- Result{
-			JobID:   job.ID,
-			Content: result,
-		}
+
 	}
+
 }
 
-func (p *Pool) Start() {
+func (p *Pool) Start(ctx context.Context) <-chan Result {
 	for i := 0; i < p.workerCount; i++ {
 		p.wg.Add(1)
-		go p.worker()
+		go p.worker(ctx)
 	}
+
+	return p.results
 }
 
 func (p *Pool) Submit(job Job) {
