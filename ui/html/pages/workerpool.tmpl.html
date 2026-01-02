@@ -1,0 +1,100 @@
+{{define "title"}}Worker Pool Demo{{end}}
+
+{{define "content"}}
+<h1>Worker Pool Demo</h1>
+
+<p>Upload multiple files and process them using a worker pool! A fixed number of workers will process jobs from a queue, demonstrating efficient resource management.</p>
+
+{{if .ToolData.Error}}
+  <p style="color: red; background: #ffe6e6; padding: 0.75rem; border-radius: 4px; margin: 1rem 0;">
+    <strong>Error:</strong> {{.ToolData.Error}}
+  </p>
+{{end}}
+
+<form action="/tools/workerpool" method="post" enctype="multipart/form-data" style="margin-top: 1.5rem;">
+
+  <div style="margin-bottom: 1.5rem;">
+    <label for="files" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+      Select Files (multiple):
+    </label>
+    <input
+      type="file"
+      id="files"
+      name="files"
+      multiple
+      accept=".txt"
+      style="padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;"
+    >
+    <p style="margin-top: 0.5rem; font-size: 14px; color: #666;">
+      Select 5-10 text files to see the worker pool in action!
+    </p>
+  </div>
+
+  <div style="margin-bottom: 1.5rem;">
+    <label for="workers" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+      Number of Workers:
+    </label>
+    <input
+      type="number"
+      id="workers"
+      name="workers"
+      min="1"
+      max="10"
+      value="3"
+      style="padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; width: 100px;"
+    >
+    <p style="margin-top: 0.5rem; font-size: 14px; color: #666;">
+      Choose how many workers will process your files (1-10)
+    </p>
+  </div>
+
+  <button
+    type="submit"
+    style="padding: 0.75rem 2rem; background: #222; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;"
+  >
+    Process with Worker Pool
+  </button>
+</form>
+
+{{if .ToolData.Results}}
+  <section style="margin-top: 2rem;">
+    <h2>Results</h2>
+
+    <div style="background: #e8f5e9; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
+      <p style="margin: 0; font-weight: bold;">
+        ✅ Processed {{len .ToolData.Results}} files using {{.ToolData.WorkerCount}} workers!
+      </p>
+    </div>
+
+    {{range .ToolData.Results}}
+      <div style="background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 1rem; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <h3 style="margin: 0; font-size: 16px;">📄 {{.Filename}}</h3>
+          <span style="background: #2196F3; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 12px;">
+            Job #{{.JobID}}
+          </span>
+        </div>
+
+        {{if .Error}}
+          <p style="color: #f44336; margin: 0; font-size: 14px;">Error: {{.Error}}</p>
+        {{else}}
+          <pre style="background: white; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; overflow-x: auto; font-family: 'Courier New', Consolas, monospace; font-size: 14px; line-height: 1.5; max-height: 200px; overflow-y: auto;">{{.Content}}</pre>
+        {{end}}
+      </div>
+    {{end}}
+  </section>
+{{end}}
+
+<section style="margin-top: 2rem; padding: 1rem; background: #fff3cd; border-radius: 4px;">
+  <h3 style="margin-top: 0;">🏊 Learning: Worker Pool Pattern</h3>
+  <ul style="margin-bottom: 0;">
+    <li>A <strong>fixed number of workers</strong> process jobs from a shared queue</li>
+    <li><strong>Jobs channel</strong> queues work to be done</li>
+    <li><strong>Results channel</strong> collects completed work</li>
+    <li>Workers run concurrently but are <strong>limited in number</strong> (unlike unbounded goroutines)</li>
+    <li>Prevents resource exhaustion when processing many tasks</li>
+    <li>Great pattern for rate-limiting and controlled concurrency</li>
+  </ul>
+</section>
+
+{{end}}

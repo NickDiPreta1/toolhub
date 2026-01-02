@@ -57,7 +57,6 @@ func (p *Pool) worker(ctx context.Context) {
 			if !ok {
 				return
 			}
-			// Execute the job function
 			result, err := job.Func(job.Content)
 			if err != nil {
 				// Send error result
