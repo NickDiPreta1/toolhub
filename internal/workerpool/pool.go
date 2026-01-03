@@ -32,7 +32,7 @@ type Pool struct {
 	wg          sync.WaitGroup
 }
 
-// NewPool creates and initializes a new worker pool.
+// NewPool creates and a new worker pool.
 // wc specifies the number of worker goroutines to spawn.
 // buffer sets the capacity of both the jobs and results channels.
 // Returns a pointer to the newly created Pool.
