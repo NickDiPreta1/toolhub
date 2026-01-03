@@ -600,6 +600,43 @@ func (app *Application) workerPool(w http.ResponseWriter, r *http.Request) {
 			workerCount = 3
 		}
 
+		functionChoice := r.FormValue("function")
+		if functionChoice == "" {
+			functionChoice = "hash"
+		}
+
+		var processFunc func([]byte) ([]byte, error)
+		switch functionChoice {
+		case "hash":
+			processFunc = func(b []byte) ([]byte, error) {
+				result, err := hashutil.Hash(b)
+				return []byte(result), err
+			}
+		case "uppercase":
+			processFunc = func(b []byte) ([]byte, error) {
+				upper := bytes.ToUpper(b)
+				return upper, nil
+			}
+		case "base64encode":
+			processFunc = func(b []byte) ([]byte, error) {
+				encoded := encodingutil.Encode(string(b))
+				return []byte(encoded), nil
+			}
+		case "base64decode":
+			processFunc = func(b []byte) ([]byte, error) {
+				decoded, err := encodingutil.Decode(string(b))
+				if err != nil {
+					return nil, err
+				}
+				return []byte(decoded), nil
+			}
+		default:
+			processFunc = func(b []byte) ([]byte, error) {
+				result, err := hashutil.Hash(b)
+				return []byte(result), err
+			}
+		}
+
 		ctx := r.Context()
 		pool := workerpool.NewPool(workerCount, len(files))
 		resultsChan := pool.Start(ctx)
@@ -633,10 +670,7 @@ func (app *Application) workerPool(w http.ResponseWriter, r *http.Request) {
 			pool.Submit(workerpool.Job{
 				ID:      i,
 				Content: content,
-				Func: func(b []byte) ([]byte, error) {
-					result, err := hashutil.Hash(b)
-					return []byte(result), err
-				},
+				Func:    processFunc,
 			})
 		}
 

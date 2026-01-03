@@ -48,6 +48,25 @@
     </p>
   </div>
 
+  <div style="margin-bottom: 1.5rem;">
+    <label for="function" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+      Processing Function:
+    </label>
+    <select
+      id="function"
+      name="function"
+      style="padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; width: 250px;"
+    >
+      <option value="hash">Hash (SHA-256)</option>
+      <option value="uppercase">Convert to Uppercase</option>
+      <option value="base64encode">Base64 Encode</option>
+      <option value="base64decode">Base64 Decode</option>
+    </select>
+    <p style="margin-top: 0.5rem; font-size: 14px; color: #666;">
+      Choose which function to apply to each file
+    </p>
+  </div>
+
   <button
     type="submit"
     style="padding: 0.75rem 2rem; background: #222; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;"
