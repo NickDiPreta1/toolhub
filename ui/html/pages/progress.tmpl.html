@@ -1,0 +1,74 @@
+{{define "title"}}Cancellable Progress Demo{{end}}
+
+{{define "content"}}
+<h1>Cancellable Progress Demo</h1>
+
+<p>Start a long-running operation and watch it stream progress in real-time. Close the tab or let it timeout to see context cancellation in action.</p>
+
+<form action="/tools/progress" method="post" style="margin-top: 1.5rem;">
+  <div style="margin-bottom: 1.5rem;">
+    <label for="chunks" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+      Number of Chunks:
+    </label>
+    <input
+      type="number"
+      id="chunks"
+      name="chunks"
+      min="5"
+      max="50"
+      value="20"
+      style="padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; width: 100px;"
+    >
+    <p style="margin-top: 0.5rem; font-size: 14px; color: #666;">
+      Each chunk takes ~500ms to process
+    </p>
+  </div>
+
+  <div style="margin-bottom: 1.5rem;">
+    <label for="timeout" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+      Timeout (seconds):
+    </label>
+    <input
+      type="number"
+      id="timeout"
+      name="timeout"
+      min="5"
+      max="60"
+      value="30"
+      style="padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; width: 100px;"
+    >
+    <p style="margin-top: 0.5rem; font-size: 14px; color: #666;">
+      Operation will cancel automatically after this many seconds
+    </p>
+  </div>
+
+  <button
+    type="submit"
+    style="padding: 0.75rem 2rem; background: #222; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;"
+  >
+    Start Long Operation
+  </button>
+</form>
+
+<section style="margin-top: 2rem; padding: 1rem; background: #e3f2fd; border-radius: 4px;">
+  <h3 style="margin-top: 0;">💡 What to Try</h3>
+  <ul style="margin-bottom: 0;">
+    <li><strong>Watch it complete:</strong> Let all chunks finish</li>
+    <li><strong>Close the tab:</strong> Server detects disconnection and stops work</li>
+    <li><strong>Trigger timeout:</strong> Set chunks=50, timeout=5 to see timeout cancellation</li>
+    <li><strong>Check server logs:</strong> See cancellation messages when you interrupt</li>
+  </ul>
+</section>
+
+<section style="margin-top: 2rem; padding: 1rem; background: #fff3cd; border-radius: 4px;">
+  <h3 style="margin-top: 0;">📚 Learning: Context Package</h3>
+  <ul style="margin-bottom: 0;">
+    <li><strong>r.Context()</strong> — every HTTP request has a context that cancels when client disconnects</li>
+    <li><strong>context.WithTimeout</strong> — wraps a context with an automatic deadline</li>
+    <li><strong>ctx.Done()</strong> — channel that closes when context is cancelled</li>
+    <li><strong>Graceful cancellation</strong> — stop work immediately, don't waste resources</li>
+    <li>This pattern is essential for production services</li>
+  </ul>
+</section>
+
+{{end}}

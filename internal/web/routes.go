@@ -15,6 +15,7 @@ func (app *Application) Routes() http.Handler {
 	mux.HandleFunc("/tools/concurrent-upper", app.concurrentUpper)
 	mux.HandleFunc("/tools/concurrent-hash", app.concurrentHash)
 	mux.HandleFunc("/tools/workerpool", app.workerPool)
+	mux.HandleFunc("/tools/progress", app.progressDemo)
 
 	return app.PanicRecover(app.LogRequest(mux))
 }
